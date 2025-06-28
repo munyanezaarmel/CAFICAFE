@@ -85,24 +85,28 @@ def validate_input(message: str):
         return False, "Message is too long (max 1000 characters)."
     return True, ""
 
-# Chat endpoint
-@app.post("/chat", response_model=ChatResponse)
+@app.post("/chat")
 async def chat_endpoint(request: ChatRequest):
     try:
-        is_valid, error_msg = validate_input(request.message)
-        if not is_valid:
-            return ChatResponse(response="", success=False, error_message=error_msg)
-
-        ai_reply = await chatbot(request.message)
-
-        return ChatResponse(response=ai_reply, success=True)
-
+        print(f"🔍 Received message: {request.message}")
+        
+        # Use the new method with mock responses
+        response = await gemini_client.generate_response_with_fallback(request.message)
+        
+        print(f"🔍 Generated response: {response[:100]}...")
+        
+        return {
+            "response": response,
+            "success": True,
+            "error_message": ""
+        }
     except Exception as e:
-        print(f"Error in /chat: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error. Please try again later."
-        )
+        print(f"❌ Chat endpoint error: {e}")
+        return {
+            "response": "Service temporarily unavailable. Please try again.",
+            "success": False,
+            "error_message": str(e)
+        }
 
 # Test question endpoint
 @app.post("/test-questions")

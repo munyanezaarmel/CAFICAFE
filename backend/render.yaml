@@ -1,7 +1,7 @@
 
 services:
   - type: web
-    name: restaurant-chatbot
+    name: caficafe-backend
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
@@ -9,6 +9,6 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: FRONTEND_URL
-        value: https://your-frontend-site.com
+        value: https://caficafe-5.onrender.com
       - key: PRODUCTION_FRONTEND_URL
-        value: https://your-frontend-site.com
+        value: https://caficafe-5.onrender.com
