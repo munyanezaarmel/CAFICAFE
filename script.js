@@ -62,11 +62,7 @@ function initCarousel() {
 }
 
 // Configuration
-const API_BASE_URL = 'https://caficafe-5.onrender.com'; // Your deployed backend URL
-
-// Global variables for connection status
-let isBackendConnected = false;
-let connectionCheckInterval = null;
+const API_BASE_URL = 'https://caficafe-5.onrender.com'; 
 
 // Chat functionality
 async function sendMessage() {
@@ -80,7 +76,7 @@ async function sendMessage() {
     const userMessage = chatInput.value.trim();
     
     // Hide any previous error messages
-    hideError();
+    errorMessage.style.display = 'none';
     
     // Validate input
     if (!userMessage) {
@@ -88,88 +84,54 @@ async function sendMessage() {
         return;
     }
     
-    if (userMessage.length > 1000) {
-        showError('Message is too long. Please keep it under 1000 characters.');
-        return;
-    }
-    
     // Add user message to chat
     addMessage(userMessage, 'user');
     
-    // Clear input and show loading state
+    // Clear input and disable button
     chatInput.value = '';
-    setLoadingState(true);
+    sendButton.disabled = true;
+    sendText.style.display = 'none';
+    loadingText.style.display = 'inline';
     
     try {
-        console.log('Sending message to:', `${API_BASE_URL}/chat`);
-        
         // Send request to backend
         const response = await fetch(`${API_BASE_URL}/chat`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 message: userMessage
             })
         });
         
-        console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
-        
         if (!response.ok) {
-            // Handle specific HTTP errors
-            if (response.status === 404) {
-                throw new Error('Chat service not found. Please contact support.');
-            } else if (response.status === 500) {
-                throw new Error('Server error. Please try again in a moment.');
-            } else if (response.status === 429) {
-                throw new Error('Too many requests. Please wait a moment and try again.');
-            } else {
-                throw new Error(`Service error (${response.status}). Please try again.`);
-            }
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Response data:', data);
+        console.log('Response data:', data); // Debug log
         
-        // Handle different response formats
-        if (data.success === true || data.success === undefined) {
-            // Successful response
-            const botResponse = data.response || data.message || 'I received your message but couldn\'t generate a response.';
-            addMessage(botResponse, 'bot');
-            isBackendConnected = true;
+        if (data.success === true) { // Explicitly check for true
+            // Add bot response to chat
+            addMessage(data.message, 'bot'); // Use data.message directly
         } else {
-            // Backend returned an error
-            const errorMsg = data.error_message || data.error || 'Sorry, something went wrong. Please try again.';
-            showError(errorMsg);
-            console.error('Backend error:', data);
+            // Show error from backend
+            showError(data.error_message || 'Sorry, something went wrong. Please try again.');
         }
         
     } catch (error) {
         console.error('Error sending message:', error);
-        isBackendConnected = false;
-        
-        // Show user-friendly error messages based on error type
-        if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) {
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
             showError('Unable to connect to our chat service. Please check your internet connection and try again.');
-        } else if (error.message.includes('CORS')) {
-            showError('Connection blocked. Please contact support if this continues.');
-        } else if (error.message.includes('timeout')) {
-            showError('Request timed out. Please try again.');
         } else {
-            showError(error.message || 'Sorry, something went wrong. Please try again in a moment.');
+            showError('Sorry, something went wrong. Please try again in a moment.');
         }
-        
-        // Add fallback response for better UX
-        setTimeout(() => {
-            addMessage("I'm currently experiencing technical difficulties. Please try again in a few moments, or contact us directly for immediate assistance.", 'bot error');
-        }, 1000);
-        
     } finally {
-        // Reset loading state
-        setLoadingState(false);
+        // Re-enable button
+        sendButton.disabled = false;
+        sendText.style.display = 'inline';
+        loadingText.style.display = 'none';
         
         // Focus back on input
         chatInput.focus();
@@ -181,180 +143,53 @@ function addMessage(message, sender) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${sender}-message`;
     
-    // Add timestamp
-    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    const messageContent = document.createElement('div');
-    messageContent.className = 'message-content';
-    
     const messageP = document.createElement('p');
     messageP.textContent = message;
     
-    const timeSpan = document.createElement('span');
-    timeSpan.className = 'message-time';
-    timeSpan.textContent = timestamp;
-    
-    messageContent.appendChild(messageP);
-    messageContent.appendChild(timeSpan);
-    messageDiv.appendChild(messageContent);
-    
+    messageDiv.appendChild(messageP);
     chatMessages.appendChild(messageDiv);
     
-    // Scroll to bottom with smooth animation
-    chatMessages.scrollTo({
-        top: chatMessages.scrollHeight,
-        behavior: 'smooth'
-    });
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 function showError(message) {
     const errorDiv = document.getElementById('errorMessage');
-    if (!errorDiv) {
-        console.error('Error message div not found');
-        alert(message); // Fallback to alert
-        return;
-    }
-    
     errorDiv.textContent = message;
     errorDiv.style.display = 'block';
-    errorDiv.className = 'error-message show';
     
-    // Hide error after 8 seconds
+    // Hide error after 5 seconds
     setTimeout(() => {
-        hideError();
-    }, 8000);
-}
-
-function hideError() {
-    const errorDiv = document.getElementById('errorMessage');
-    if (errorDiv) {
         errorDiv.style.display = 'none';
-        errorDiv.className = 'error-message';
-    }
+    }, 5000);
 }
 
-function setLoadingState(isLoading) {
-    const sendButton = document.getElementById('sendButton');
-    const sendText = document.getElementById('sendText');
-    const loadingText = document.getElementById('loadingText');
-    const chatInput = document.getElementById('chatInput');
-    
-    if (sendButton) sendButton.disabled = isLoading;
-    if (chatInput) chatInput.disabled = isLoading;
-    
-    if (sendText && loadingText) {
-        sendText.style.display = isLoading ? 'none' : 'inline';
-        loadingText.style.display = isLoading ? 'inline' : 'none';
-    }
-}
-
-// Test backend connection
-async function testConnection() {
-    try {
-        console.log('Testing connection to:', `${API_BASE_URL}/health`);
-        
-        const response = await fetch(`${API_BASE_URL}/health`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Backend connection successful:', data);
-            isBackendConnected = true;
-            updateConnectionStatus(true);
-            return true;
-        } else {
-            console.warn('⚠️ Backend responded with error status:', response.status);
-            isBackendConnected = false;
-            updateConnectionStatus(false);
-            return false;
-        }
-    } catch (error) {
-        console.error('❌ Backend connection failed:', error);
-        isBackendConnected = false;
-        updateConnectionStatus(false);
-        return false;
-    }
-}
-
-function updateConnectionStatus(connected) {
-    const statusElement = document.getElementById('connectionStatus');
-    if (statusElement) {
-        statusElement.textContent = connected ? 'Connected' : 'Disconnected';
-        statusElement.className = connected ? 'status-connected' : 'status-disconnected';
-    }
-}
-
-// Retry connection periodically if disconnected
-function startConnectionMonitoring() {
-    // Test connection immediately
-    testConnection();
-    
-    // Set up periodic connection checks
-    connectionCheckInterval = setInterval(async () => {
-        if (!isBackendConnected) {
-            console.log('Retrying connection...');
-            await testConnection();
-        }
-    }, 30000); // Check every 30 seconds if disconnected
-}
-
-function stopConnectionMonitoring() {
-    if (connectionCheckInterval) {
-        clearInterval(connectionCheckInterval);
-        connectionCheckInterval = null;
-    }
-}
-
-// Initialize when DOM is loaded
+// Allow sending message with Enter key
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Initializing chat application...');
-    
     const chatInput = document.getElementById('chatInput');
-    const sendButton = document.getElementById('sendButton');
     
-    // Set up enter key listener
     if (chatInput) {
         chatInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
+            if (e.key === 'Enter') {
                 sendMessage();
             }
         });
-        
-        // Focus on input
-        chatInput.focus();
     }
-    
-    // Set up send button listener
-    if (sendButton) {
-        sendButton.addEventListener('click', sendMessage);
-    }
-    
-    // Start connection monitoring
-    startConnectionMonitoring();
-    
-    // Add welcome message
-    setTimeout(() => {
-        addMessage("Hello! I'm your restaurant assistant. Ask me about our menu, hours, reservations, or anything else you'd like to know!", 'bot');
-    }, 500);
 });
 
-// Clean up on page unload
-window.addEventListener('beforeunload', function() {
-    stopConnectionMonitoring();
-});
+// Test connection on page load (optional)
+async function testConnection() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/health`);
+        if (response.ok) {
+            console.log('✅ Backend connection successful');
+        } else {
+            console.warn('⚠️ Backend responded with error status');
+        }
+    } catch (error) {
+        console.error('❌ Backend connection failed:', error);
+    }
+}
 
-// Expose functions for debugging (optional)
-window.chatDebug = {
-    testConnection,
-    sendTestMessage: () => sendMessage('Hello, this is a test message'),
-    clearChat: () => {
-        const chatMessages = document.getElementById('chatMessages');
-        if (chatMessages) chatMessages.innerHTML = '';
-    },
-    getConnectionStatus: () => isBackendConnected
-};
+// Uncomment the line below if you want to test connection on page load
+// testConnection();
