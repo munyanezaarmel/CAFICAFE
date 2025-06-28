@@ -1,0 +1,49 @@
+{
+  "signature_dishes": [
+    {
+      "name": "CAFICAFE Special Burger",
+      "description": "Our signature beef burger with locally-sourced ingredients, special sauce, and fresh vegetables",
+      "price": "$12.99",
+      "category": "Main Course",
+      "dietary_info": ["Contains gluten", "Can be made gluten-free upon request"]
+    },
+    {
+      "name": "Fusion Rice Bowl",
+      "description": "A perfect blend of local and international flavors with jasmine rice, grilled protein, and seasonal vegetables",
+      "price": "$10.99",
+      "category": "Main Course",
+      "dietary_info": ["Gluten-free", "Vegetarian option available"]
+    },
+    {
+      "name": "Artisan Coffee Blend",
+      "description": "Our house-roasted coffee blend with notes of chocolate and caramel",
+      "price": "$4.99",
+      "category": "Beverages",
+      "dietary_info": ["Vegan", "Dairy-free options available"]
+    }
+  ],
+  "recommended_dishes": [
+    {
+      "name": "Student Special Combo",
+      "description": "Perfect for students - main dish, drink, and dessert at a discounted price",
+      "price": "$8.99",
+      "category": "Combo",
+      "dietary_info": ["Multiple options available"]
+    },
+    {
+      "name": "Tourist Delight Platter",
+      "description": "A sampler of local favorites perfect for first-time visitors",
+      "price": "$15.99",
+      "category": "Platter",
+      "dietary_info": ["Contains various allergens", "Dietary modifications available"]
+    }
+  ],
+  "dietary_accommodations": {
+    "vegetarian": "We offer a full vegetarian menu with fresh, locally-sourced vegetables",
+    "vegan": "Vegan options available for most dishes upon request",
+    "gluten_free": "Gluten-free alternatives available for bread, pasta, and most dishes",
+    "allergies": "Please inform staff of any allergies - we take food safety seriously",
+    "halal": "Halal meat options available",
+    "kosher": "We can accommodate kosher dietary requirements with advance notice"
+  }
+}

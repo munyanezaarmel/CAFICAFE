@@ -1,0 +1,19 @@
+{
+  "regular_hours": {
+    "monday": "8:00 AM - 10:00 PM",
+    "tuesday": "8:00 AM - 10:00 PM",
+    "wednesday": "8:00 AM - 10:00 PM", 
+    "thursday": "8:00 AM - 11:00 PM",
+    "friday": "8:00 AM - 11:00 PM",
+    "saturday": "9:00 AM - 11:00 PM",
+    "sunday": "9:00 AM - 9:00 PM"
+  },
+  "holiday_hours": {
+    "note": "Holiday hours may vary. Please call ahead during major holidays."
+  },
+  "special_notes": [
+    "Kitchen closes 30 minutes before restaurant closing time",
+    "Happy hour: Monday-Friday 3:00 PM - 6:00 PM",
+    "Student discounts available Monday-Friday until 4:00 PM"
+  ]
+}

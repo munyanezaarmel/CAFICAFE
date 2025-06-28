@@ -1,0 +1,47 @@
+{
+  "basic_info": {
+    "name": "CAFICAFE",
+    "tagline": "Fast. Friendly. Frustration-free.",
+    "description": "We started with one simple goal: to serve delicious, honest meals that bring people together. Inspired by local flavors and global influences, we created a space where everyone from students and tourists to families and foodies can find something they love."
+  },
+  "location": {
+    "address": "123 University Avenue, Downtown District",
+    "city": "Your City",
+    "phone": "+1 (555) 123-CAFE",
+    "email": "hello@caficafe.com",
+    "directions": "Located in the heart of downtown, easily accessible by public transport. Just a 5-minute walk from the university campus."
+  },
+  "booking": {
+    "methods": [
+      "Online reservation system on our website",
+      "Call us at +1 (555) 123-CAFE",
+      "Walk-ins welcome (subject to availability)",
+      "Mobile app reservation system (coming soon)"
+    ],
+    "policies": [
+      "Reservations recommended for groups of 4 or more",
+      "24-hour cancellation policy",
+      "Student groups get priority booking on weekdays"
+    ]
+  },
+  "contact": {
+    "phone": "+1 (555) 123-CAFE",
+    "email": "hello@caficafe.com",
+    "social_media": {
+      "instagram": "@caficafe_official",
+      "facebook": "CAFICAFE Restaurant",
+      "twitter": "@caficafe"
+    },
+    "website": "https://munyanezaarmel.github.io/CAFICAFE/"
+  },
+  "features": [
+    "Free WiFi for students and customers",
+    "Student discounts available",
+    "Tourist-friendly with picture menus",
+    "Locally-sourced ingredients",
+    "Professional chefs with international training",
+    "Stylish, comfortable dining environment",
+    "Online ordering system",
+    "Takeout and delivery available"
+  ]
+}

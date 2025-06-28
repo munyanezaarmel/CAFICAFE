@@ -38,6 +38,28 @@
       .hero-slide.active {
         opacity: 1;
       }
+      .chat-section {
+  padding: 2rem 0;
+  background-color: #f8f9fa;
+}
+.chat-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.chat-box {
+  min-height: 300px;
+  margin-bottom: 1rem;
+  overflow-y: auto;
+}
+.chat-input {
+  display: flex;
+  gap: 10px;
+}
+
     </style>
   </head>
   <body class="bg-white">
@@ -321,63 +343,20 @@
     </button>
 
 
-    <section id="chatbox" class="flex flex-col items-center py-16">
-      <div
-        class="w-full max-w-xs bg-[#4F6875D1] rounded-t-lg p-4 text-white text-lg font-bold flex items-center space-x-2"
-      >
-        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-          <path
-            d="M12 2C6.48 2 2 5.58 2 10c0 2.39 1.19 4.54 3.17 6.13L4 22l5.13-2.17C10.09 19.94 11.03 20 12 20c5.52 0 10-3.58 10-8s-4.48-8-10-8z"
-          />
-        </svg>
-        <span
-          >FoodBot<br /><span class="text-sm font-normal"
-            >Your AI food Assistant</span
-          ></span
-        >
-      </div>
-      <div
-        class="w-full max-w-xs bg-blue-100 p-3 rounded-lg mt-2 text-gray-800"
-      >
-        Hi! I'm FoodBot, your assistant today. How can I help you find the
-        perfect meal today?
-      </div>
-      <div class="w-full max-w-xs flex justify-end mt-2">
-        <div class="bg-blue-50 p-3 rounded-lg text-gray-800 flex items-center">
-          Good morning. I'd like to order some food.
-          <svg class="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V7h2v2z"
-            />
-          </svg>
-        </div>
-      </div>
-      <div class="flex justify-center w-full mt-4">
-        <span class="w-2 h-2 bg-gray-800 rounded-full mx-1 inline-block"></span>
-        <span class="w-2 h-2 bg-gray-400 rounded-full mx-1 inline-block"></span>
-        <span class="w-2 h-2 bg-gray-400 rounded-full mx-1 inline-block"></span>
-      </div>
-      <div class="w-full max-w-xs bg-blue-50 rounded-b-lg p-4 mt-4">
-        <div class="flex items-center border rounded px-2 py-1 bg-blue-100">
-          <input
-            class="flex-1 bg-transparent outline-none text-gray-700"
-            placeholder="Ask anything..."
-          />
-          <button>
-            <svg
-              class="w-5 h-5 text-gray-600"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                d="M2.94 2.94a1.5 1.5 0 012.12 0l12 12a1.5 1.5 0 01-2.12 2.12l-12-12a1.5 1.5 0 010-2.12z"
-              />
-            </svg>
-          </button>
-        </div>
-        <div class="text-xs text-gray-400 mt-2">Powered by AI</div>
-      </div>
-    </section>
+    <section id="chat-section" class="chat-section">
+  <div class="chat-container">
+    <div class="chat-header">
+      <h3>Ask us anything!</h3>
+      <p>Get instant answers about our restaurant.</p>
+    </div>
+    <div id="chat-box" class="chat-box"></div>
+    <div class="chat-input">
+      <input type="text" id="user-input" placeholder="Type your question..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+</section>
+
         <!-- Footer -->
     <footer class="bg-gray-800 text-white py-12 px-6">
       <div class="max-w-6xl mx-auto">

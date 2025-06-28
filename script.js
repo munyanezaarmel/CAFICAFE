@@ -61,35 +61,31 @@ function initCarousel() {
   updateCarousel();
 }
 
-// Chat button functionality
-function initChatButton() {
-  const chatBtn = document.getElementById("chat-btn");
-  chatBtn.addEventListener("click", () => {
-    const chatbox = document.getElementById("chatbox");
-    if (chatbox) {
-      chatbox.scrollIntoView({ behavior: "smooth" });
-    }
+const API_BASE_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:8000'
+  : 'https://your-deployed-backend-url.com';
+
+async function sendMessage() {
+  const input = document.getElementById("user-input");
+  const message = input.value.trim();
+  if (!message) return;
+
+  addMessage("You", message);
+
+  const res = await fetch(`${API_BASE_URL}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
   });
+
+  const data = await res.json();
+  addMessage("Bot", data.response);
+  input.value = "";
 }
 
-// Smooth scrolling for anchor links
-function initSmoothScrolling() {
-  document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-    anchor.addEventListener("click", function (e) {
-      e.preventDefault();
-      const target = document.querySelector(this.getAttribute("href"));
-      if (target) {
-        target.scrollIntoView({
-          behavior: "smooth",
-        });
-      }
-    });
-  });
+function addMessage(sender, text) {
+  const chatBox = document.getElementById("chat-box");
+  const msg = document.createElement("p");
+  msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
+  chatBox.appendChild(msg);
 }
-
-// Initialize all functionality when page loads
-document.addEventListener("DOMContentLoaded", () => {
-  initCarousel();
-  initChatButton();
-  initSmoothScrolling();
-});
