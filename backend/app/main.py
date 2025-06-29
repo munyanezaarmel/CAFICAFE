@@ -8,6 +8,10 @@ from pydantic import BaseModel
 import logging
 import os
 
+# Import Starlette custom middleware support
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+
 # Import your modules
 from app.chat import chatbot, gemini_client
 
@@ -36,6 +40,7 @@ origins = [
     "http://localhost:5500",
 ]
 
+# Native FastAPI CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -43,6 +48,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Custom CORS middleware to force headers for all routes
+class CustomCORSMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = "https://munyanezaarmel.github.io"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
+
+app.add_middleware(CustomCORSMiddleware)
 
 # -------------------------------------------------------------------
 # Pydantic models
@@ -65,15 +82,6 @@ class HealthResponse(BaseModel):
     gemini_api: str = None
     timestamp: str
     error: str = None
-
-# -------------------------------------------------------------------
-# MANUAL CORS HEADERS FUNCTION (optional backup)
-# -------------------------------------------------------------------
-def add_cors_headers(response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Accept, Content-Type, Authorization"
-    return response
 
 # -------------------------------------------------------------------
 # Root endpoint
@@ -129,19 +137,10 @@ async def health_check():
 # OPTIONS handlers
 # -------------------------------------------------------------------
 @app.options("/")
-async def options_root():
-    return {"message": "OK"}
-
 @app.options("/health")
-async def options_health():
-    return {"message": "OK"}
-
 @app.options("/chat")
-async def options_chat():
-    return {"message": "OK"}
-
 @app.options("/test-cors")
-async def options_test_cors():
+async def handle_options():
     return {"message": "OK"}
 
 # -------------------------------------------------------------------
@@ -214,7 +213,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8001))
     logger.info(f"Starting server on port {port}")
     uvicorn.run(
-        "app.main:app",  # ✅ This is the fix
+        "app.main:app",  # <- This is correct path for Render
         host="0.0.0.0",
         port=port,
         reload=False,
