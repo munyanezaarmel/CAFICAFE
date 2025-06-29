@@ -27,6 +27,7 @@ app = FastAPI(
 # -------------------------------------------------------------------
 # CORS Configuration - CRITICAL FIX
 # -------------------------------------------------------------------
+# CORS Configuration - CRITICAL FIX
 origins = [
     "https://munyanezaarmel.github.io",
     "http://localhost:3000",
@@ -34,10 +35,9 @@ origins = [
     "http://localhost:5500",
 ]
 
-# CRITICAL: Add CORS middleware BEFORE any routes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://munyanezaarmel.github.io"],
+    allow_origins=origins,  # ✅ Use the variable, not a hardcoded one
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
