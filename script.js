@@ -1,4 +1,4 @@
-// Carousel functionality with real image switching
+// === Carousel Functionality ===
 function initCarousel() {
   let currentSlide = 0;
   const totalSlides = 3;
@@ -11,9 +11,7 @@ function initCarousel() {
     document.getElementById("slide-3"),
   ];
 
-  // Function to update carousel display
   function updateCarousel() {
-    // Hide all slides
     slides.forEach((slide, index) => {
       if (index === currentSlide) {
         slide.classList.remove("hidden");
@@ -24,7 +22,6 @@ function initCarousel() {
       }
     });
 
-    // Update dots appearance
     carouselDots.forEach((dot, index) => {
       if (index === currentSlide) {
         dot.classList.remove("bg-gray-400");
@@ -36,19 +33,16 @@ function initCarousel() {
     });
   }
 
-  // Previous button click handler
   prevBtn.addEventListener("click", () => {
     currentSlide = currentSlide === 0 ? totalSlides - 1 : currentSlide - 1;
     updateCarousel();
   });
 
-  // Next button click handler
   nextBtn.addEventListener("click", () => {
     currentSlide = currentSlide === totalSlides - 1 ? 0 : currentSlide + 1;
     updateCarousel();
   });
 
-  // Dot navigation click handlers
   carouselDots.forEach((dot, index) => {
     dot.addEventListener("click", (e) => {
       e.preventDefault();
@@ -61,8 +55,9 @@ function initCarousel() {
   updateCarousel();
 }
 
-// Configuration
-const API_BASE_URL = 'https://caficafe-5.onrender.com'; 
+// ConfigurationAdd commentMore actions
+const API_BASE_URL = 'https://caficafe-5.onrender.com'; // Change this to your deployed backend URL
+// For production, use: const API_BASE_URL = 'https://your-backend-url.com';
 
 // Chat functionality
 async function sendMessage() {
@@ -110,11 +105,10 @@ async function sendMessage() {
         }
         
         const data = await response.json();
-        console.log('Response data:', data); // Debug log
         
-        if (data.success === true) { // Explicitly check for true
+        if (data.success) {
             // Add bot response to chat
-            addMessage(data.message, 'bot'); // Use data.message directly
+            addMessage(data.response, 'bot');
         } else {
             // Show error from backend
             showError(data.error_message || 'Sorry, something went wrong. Please try again.');
@@ -122,6 +116,8 @@ async function sendMessage() {
         
     } catch (error) {
         console.error('Error sending message:', error);
+        
+        // Show user-friendly error message
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
             showError('Unable to connect to our chat service. Please check your internet connection and try again.');
         } else {

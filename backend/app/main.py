@@ -90,47 +90,27 @@ async def health_check():
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     try:
-        logging.info(f"🔍 Received message: {request.message}")
+        print(f"🔍 Received message: {request.message}")
         
-        # Generate response using your existing method
-        response_data = await gemini_client.generate_response_with_fallback(request.message)
+        # Use the new method with mock responses
+        response = await gemini_client.generate_response_with_fallback(request.message)
         
-        # Handle the response based on its type
-        if isinstance(response_data, dict) and "response" in response_data:
-            logging.warning(f"Unexpected dictionary response from gemini_client: {response_data}")
-            raise Exception("Internal fallback triggered")
-        else:
-            response_text = response_data
+        print(f"🔍 Generated response: {response[:100]}...")
         
-        logging.info(f"🔍 Generated response: {response_text[:100]}...")
-        
-        return ChatResponse(
-            message=response_text,
-            timestamp=str(__import__('datetime').datetime.now().isoformat()),
-            status="success",
-            success=True
-        )
-        
+        return {
+            "response": response,
+            "success": True,
+            "error_message": ""
+        }
     except Exception as e:
-        logging.error(f"❌ Chat endpoint error: {e}")
-        return ChatResponse(
-            message="I'm currently experiencing technical difficulties. Please try again in a few moments, or contact us directly for immediate assistance.",
-            timestamp=str(__import__('datetime').datetime.now().isoformat()),
-            status="error",
-            success=False,
-            error_message=str(e)
-        )
+        print(f"❌ Chat endpoint error: {e}")
+        return {
+            "response": "Service temporarily unavailable. Please try again.",
+            "success": False,
+            "error_message": str(e)
+        }
 
-@app.get("/chat")
-async def chat_status():
-    return {
-        "message": "Chat service is running",
-        "status": "online",
-        "timestamp": str(__import__('datetime').datetime.now().isoformat()),
-        "service": "CafiCafe Chat"
-    }
-
-# Test questions endpoint
+# Test question endpoint
 @app.post("/test-questions")
 async def test_questions():
     test_questions = [
@@ -145,14 +125,13 @@ async def test_questions():
     results = []
     for question in test_questions:
         try:
-            response = await gemini_client.generate_response_with_fallback(question)
+            response = await chatbot(question)
             results.append({
                 "question": question,
                 "response": response[:100] + "..." if len(response) > 100 else response,
                 "success": True
             })
         except Exception as e:
-            logging.error(f"❌ Test question error for '{question}': {e}")
             results.append({
                 "question": question,
                 "response": "",
@@ -165,4 +144,4 @@ async def test_questions():
 # Uvicorn entry point
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

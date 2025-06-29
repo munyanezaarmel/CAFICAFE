@@ -20,13 +20,13 @@ class GeminiClient:
         # Configure Gemini API with the key
         genai.configure(api_key=self.api_key)
         
-        # Choose the recommended latest model (can be updated)
+        # Choose the recommended latest model
         self.model = genai.GenerativeModel(model_name="models/gemini-1.5-flash-latest")
         
         # Load predefined restaurant context
         self.restaurant_context = restaurant_context.get_full_context()
         
-        # Track API usage (optional)
+        # Track API usage
         self.request_count = 0
         self.last_reset = datetime.now().date()
 
@@ -49,17 +49,14 @@ Response:"""
             
             # Use Gemini to generate a reply
             response = self.model.generate_content(full_prompt)
-            
             if response and response.text:
                 return response.text.strip()
             else:
                 return self._get_empty_response()
                 
         except Exception as e:
-            error_str = str(e)
             logging.error(f"❌ Gemini Error in generate_response: {e}")
-            
-            # Handle different types of errors
+            error_str = str(e)
             if "429" in error_str or "quota" in error_str.lower():
                 return self._get_quota_exceeded_response()
             elif "403" in error_str:
@@ -111,24 +108,12 @@ Response:"""
 
     def _get_fallback_response(self) -> str:
         """
-        Generic fallback response for unhandled errors.
+        Return a safe fallback response if AI fails.
         """
         return (
             "I apologize, but I'm currently unable to process your request. "
             "Please contact us at +1 (555) 123-CAFE or email hello@caficafe.com for assistance!"
         )
-
-    async def generate_response_with_fallback(self, user_message: str) -> str:
-        """
-        Generate response with fallback for testing or API failures.
-        """
-        logging.info(f"Generating response for: {user_message}")
-        try:
-            # Try the real API first
-            return await self.generate_response(user_message)
-        except Exception as e:
-            logging.error(f"❌ Using fallback due to API error: {e}")
-            return self.get_mock_response(user_message)
 
     def get_mock_response(self, user_message: str) -> str:
         """
@@ -176,15 +161,28 @@ Response:"""
                 "Our friendly staff will be happy to assist you!"
             )
 
+    async def generate_response_with_fallback(self, user_message: str) -> str:
+        """
+        Generate response with mock fallback for testing or API failures.
+        """
+        print(f"DEBUG: Generating response for: {user_message}")  # Debug print
+        logging.info(f"Generating response for: {user_message}")
+        try:
+            return await self.generate_response(user_message)
+        except Exception as e:
+            logging.error(f"❌ Falling back due to: {e}")
+            print(f"DEBUG: Falling back with mock response for: {user_message}")  # Debug print
+            return self.get_mock_response(user_message)
+
     def validate_api_key(self) -> bool:
         """
         Test if the API key and model are working correctly.
         """
         try:
-            test_response = self.model.generate_content("Test prompt")
+            self.model.generate_content("Test prompt")
             return True
         except Exception as e:
-            logging.error("❌ API validation failed:", e)
+            logging.error(f"❌ API validation failed: {e}")
             return False
 
     def get_api_status(self) -> dict:
@@ -192,34 +190,28 @@ Response:"""
         Check the current status of the Gemini API.
         """
         try:
-            # Simple test request
             test_response = self.model.generate_content("Hello")
             return {
                 "status": "working",
                 "api_available": True,
-                "test_response": test_response.text[:50] + "..." if test_response.text else "Empty response",
+                "test_response": test_response.text[:50] + "..." if test_response.text else "Empty",
                 "request_count": self.request_count
             }
         except Exception as e:
             error_str = str(e)
-            status_info = {
+            status = {
                 "status": "error",
                 "api_available": False,
                 "error": error_str,
                 "request_count": self.request_count
             }
-            
             if "429" in error_str or "quota" in error_str.lower():
-                status_info["error_type"] = "quota_exceeded"
-                status_info["message"] = "Daily quota limit reached"
+                status["error_type"] = "quota_exceeded"
             elif "403" in error_str:
-                status_info["error_type"] = "permission_denied"
-                status_info["message"] = "API key authentication failed"
+                status["error_type"] = "permission_denied"
             else:
-                status_info["error_type"] = "unknown"
-                status_info["message"] = "Unknown API error"
-            
-            return status_info
+                status["error_type"] = "unknown"
+            return status
 
     def reset_daily_counter(self):
         """
@@ -231,5 +223,5 @@ Response:"""
             self.last_reset = current_date
             print("✅ Daily request counter reset")
 
-# ✅ Create a single instance to use in FastAPI app
+# Single instance for FastAPI
 gemini_client = GeminiClient()
