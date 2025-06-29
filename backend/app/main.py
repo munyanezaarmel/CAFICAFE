@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import logging
+import os
 
 # Import your modules
 from app.chat import chatbot, gemini_client
@@ -28,7 +29,7 @@ origins = [
     "http://localhost:3000",
     "http://127.0.0.1:5500",
     "http://localhost:5500",
-    "https://caficafe-7.onrender.com",
+    "https://caficafe-1.onrender.com",
     "https://munyanezaarmel.github.io/CAFICAFE",
     "file://",
 ]
@@ -163,5 +164,4 @@ async def test_questions():
 # -------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))

@@ -56,7 +56,7 @@ function initCarousel() {
 }
 
 // ConfigurationAdd commentMore actions
-const API_BASE_URL = 'https://caficafe-7.onrender.com'; 
+const API_BASE_URL = 'https://caficafe-1.onrender.com'; 
 
 // Chat functionality
 async function sendMessage() {
