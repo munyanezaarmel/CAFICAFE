@@ -9,6 +9,6 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: FRONTEND_URL
-        value: https://caficafe-5.onrender.com
+        value: https://caficafe-7.onrender.com
       - key: PRODUCTION_FRONTEND_URL
-        value: https://caficafe-5.onrender.com
+        value: https://caficafe-7.onrender.com

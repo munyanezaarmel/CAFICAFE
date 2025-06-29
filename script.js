@@ -56,8 +56,7 @@ function initCarousel() {
 }
 
 // ConfigurationAdd commentMore actions
-const API_BASE_URL = 'https://caficafe-5.onrender.com'; // Change this to your deployed backend URL
-// For production, use: const API_BASE_URL = 'https://your-backend-url.com';
+const API_BASE_URL = 'https://caficafe-7.onrender.com'; 
 
 // Chat functionality
 async function sendMessage() {
