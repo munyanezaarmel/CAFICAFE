@@ -220,9 +220,11 @@ function generateUserId() {
 }
 
 // Enhanced connection test
+// Enhanced connection test
 async function testConnection() {
     try {
         console.log('Testing connection to:', `${API_BASE_URL}/health`);
+        
         const response = await fetch(`${API_BASE_URL}/health`, {
             method: 'GET',
             headers: {
@@ -242,6 +244,11 @@ async function testConnection() {
         console.error('❌ Backend connection failed:', error);
         return false;
     }
+}
+
+// Generate a simple user ID for session tracking
+function generateUserId() {
+    return 'user_' + Math.random().toString(36).substr(2, 9);
 }
 
 // Initialize everything when DOM is loaded
