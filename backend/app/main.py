@@ -17,7 +17,7 @@ from app.chat import chatbot, gemini_client
 logging.basicConfig(level=logging.INFO)
 
 # -------------------------------------------------------------------
-# FastAPI instance + CORS
+# FastAPI instance + CORS
 # -------------------------------------------------------------------
 app = FastAPI(
     title="Restaurant Chatbot API",
@@ -25,13 +25,16 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Fixed CORS origins - added your frontend URL
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:5500",
     "http://localhost:5500",
     "https://caficafe-1.onrender.com",
-    "https://munyanezaarmel.github.io/CAFICAFE",
+    "https://munyanezaarmel.github.io",  # Fixed: removed specific path
+    "https://munyanezaarmel.github.io/CAFICAFE",  # Keep this too
     "file://",
+    "*",  # Allow all origins for testing (remove in production)
 ]
 
 app.add_middleware(
@@ -48,12 +51,12 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     message: str
     userId: str | None = None
-    timestamp: str | None = None           # client‑supplied (optional)
+    timestamp: str | None = None
 
 class ChatResponse(BaseModel):
-    message: str                           # chatbot’s reply
-    timestamp: datetime                    # server‑side UTC time
-    status: str                            # "success" | "error"
+    message: str
+    timestamp: datetime
+    status: str
     success: bool = True
     error_message: str | None = None
 
@@ -78,11 +81,16 @@ async def head_root():
 @app.get("/health")
 async def health_check():
     try:
-        api_valid = (
-            gemini_client.validate_api_key()
-            if hasattr(gemini_client, "validate_api_key")
-            else True
-        )
+        # Fixed: Added safer API validation check
+        api_valid = True
+        try:
+            if hasattr(gemini_client, "validate_api_key"):
+                api_valid = gemini_client.validate_api_key()
+            elif hasattr(gemini_client, "api_key"):
+                api_valid = bool(gemini_client.api_key)
+        except Exception:
+            api_valid = False
+            
         return {
             "status": "healthy",
             "service": "restaurant-chatbot",
@@ -99,16 +107,26 @@ async def health_check():
         }
 
 # -------------------------------------------------------------------
-# /chat endpoint ‑‑ now returns a ChatResponse that matches the model
+# /chat endpoint - Fixed error handling and response format
 # -------------------------------------------------------------------
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     try:
         logging.info("🔍 Received: %s", request.message)
 
-        reply_text: str = await gemini_client.generate_response_with_fallback(
-            request.message
-        )
+        # Fixed: Better error handling for the chat function
+        try:
+            reply_text: str = await gemini_client.generate_response_with_fallback(
+                request.message
+            )
+        except Exception as chat_error:
+            logging.error("Chat generation error: %s", chat_error)
+            # Fallback to basic chatbot if gemini fails
+            try:
+                reply_text = await chatbot(request.message)
+            except Exception as fallback_error:
+                logging.error("Fallback chatbot error: %s", fallback_error)
+                reply_text = "I'm sorry, I'm having trouble processing your request right now. Please try again later."
 
         logging.info("🔍 Reply (truncated): %s", reply_text[:100])
 
@@ -120,7 +138,7 @@ async def chat_endpoint(request: ChatRequest):
         )
 
     except Exception as e:
-        logging.exception("❌ Chat endpoint error")
+        logging.exception("❌ Chat endpoint error: %s", e)
         return ChatResponse(
             message="Service temporarily unavailable. Please try again.",
             timestamp=datetime.utcnow(),
@@ -130,7 +148,7 @@ async def chat_endpoint(request: ChatRequest):
         )
 
 # -------------------------------------------------------------------
-# /test-questions helper (unchanged except for logging tweak)
+# /test-questions helper
 # -------------------------------------------------------------------
 @app.post("/test-questions")
 async def test_questions():
@@ -160,8 +178,9 @@ async def test_questions():
     return {"test_results": results}
 
 # -------------------------------------------------------------------
-# Uvicorn entry point
+# Uvicorn entry point - Fixed for Render deployment
 # -------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+    port = int(os.environ.get("PORT", 8001))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False)
