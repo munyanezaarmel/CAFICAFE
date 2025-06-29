@@ -24,9 +24,9 @@ origins = [
     "http://localhost:3000",
     "http://127.0.0.1:5500",
     "http://localhost:5500",
-    "https://caficafe-5.onrender.com",  # Your Render backend
-    "https://munyanezaarmel.github.io/CAFICAFE",  # Replace with your GitHub Pages URL
-    "file://",  # For local HTML files
+    "https://caficafe-5.onrender.com",
+    "https://munyanezaarmel.github.io/CAFICAFE",
+    "file://",
 ]
 
 app.add_middleware(
@@ -85,18 +85,27 @@ async def health_check():
             "error": str(e),
             "timestamp": str(__import__('datetime').datetime.now())
         }
+
+# Chat endpoint
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     try:
         logging.info(f"🔍 Received message: {request.message}")
         
         # Generate response using your existing method
-        response_text = await gemini_client.generate_response_with_fallback(request.message)
+        response_data = await gemini_client.generate_response_with_fallback(request.message)
+        
+        # Handle the response based on its type
+        if isinstance(response_data, dict) and "response" in response_data:
+            logging.warning(f"Unexpected dictionary response from gemini_client: {response_data}")
+            raise Exception("Internal fallback triggered")
+        else:
+            response_text = response_data
         
         logging.info(f"🔍 Generated response: {response_text[:100]}...")
         
         return ChatResponse(
-            message=response_text,  # Ensure 'message' is used, not 'response'
+            message=response_text,
             timestamp=str(__import__('datetime').datetime.now().isoformat()),
             status="success",
             success=True
@@ -104,9 +113,12 @@ async def chat_endpoint(request: ChatRequest):
         
     except Exception as e:
         logging.error(f"❌ Chat endpoint error: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="I'm currently experiencing technical difficulties. Please try again in a few moments, or contact us directly for immediate assistance."
+        return ChatResponse(
+            message="I'm currently experiencing technical difficulties. Please try again in a few moments, or contact us directly for immediate assistance.",
+            timestamp=str(__import__('datetime').datetime.now().isoformat()),
+            status="error",
+            success=False,
+            error_message=str(e)
         )
 
 @app.get("/chat")

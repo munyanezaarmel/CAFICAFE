@@ -4,6 +4,7 @@ import google.generativeai as genai
 from .restaurant_context import restaurant_context
 from datetime import datetime
 import time
+import logging
 
 # Load environment variables from .env
 load_dotenv()
@@ -56,7 +57,7 @@ Response:"""
                 
         except Exception as e:
             error_str = str(e)
-            print(f"❌ Gemini Error: {e}")
+            logging.error(f"❌ Gemini Error in generate_response: {e}")
             
             # Handle different types of errors
             if "429" in error_str or "quota" in error_str.lower():
@@ -110,12 +111,24 @@ Response:"""
 
     def _get_fallback_response(self) -> str:
         """
-        Return a safe fallback response if AI fails.
+        Generic fallback response for unhandled errors.
         """
         return (
             "I apologize, but I'm currently unable to process your request. "
             "Please contact us at +1 (555) 123-CAFE or email hello@caficafe.com for assistance!"
         )
+
+    async def generate_response_with_fallback(self, user_message: str) -> str:
+        """
+        Generate response with fallback for testing or API failures.
+        """
+        logging.info(f"Generating response for: {user_message}")
+        try:
+            # Try the real API first
+            return await self.generate_response(user_message)
+        except Exception as e:
+            logging.error(f"❌ Using fallback due to API error: {e}")
+            return self.get_mock_response(user_message)
 
     def get_mock_response(self, user_message: str) -> str:
         """
@@ -163,19 +176,6 @@ Response:"""
                 "Our friendly staff will be happy to assist you!"
             )
 
-    async def generate_response_with_fallback(self, user_message: str) -> str:
-        """
-        Generate response with mock fallback for testing.
-        Use this temporarily while API quota is exceeded.
-        """
-        try:
-            # Try the real API first
-            return await self.generate_response(user_message)
-        except Exception as e:
-            # If API fails, use mock responses for better testing
-            print(f"Using mock response due to API error: {e}")
-            return self.get_mock_response(user_message)
-
     def validate_api_key(self) -> bool:
         """
         Test if the API key and model are working correctly.
@@ -184,7 +184,7 @@ Response:"""
             test_response = self.model.generate_content("Test prompt")
             return True
         except Exception as e:
-            print("❌ API validation failed:", e)
+            logging.error("❌ API validation failed:", e)
             return False
 
     def get_api_status(self) -> dict:
