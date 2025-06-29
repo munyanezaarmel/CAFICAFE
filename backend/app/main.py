@@ -1,25 +1,29 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import os
 import logging
 
 # Import your modules
 from app.chat import chatbot, gemini_client
 
-# Configure logging
+# -------------------------------------------------------------------
+# Logging
+# -------------------------------------------------------------------
 logging.basicConfig(level=logging.INFO)
 
+# -------------------------------------------------------------------
+# FastAPI instance + CORS
+# -------------------------------------------------------------------
 app = FastAPI(
     title="Restaurant Chatbot API",
-    description="AI-powered chatbot for restaurant customer service",
-    version="1.0.0"
+    description="AI‑powered chatbot for restaurant customer service",
+    version="1.0.0",
 )
 
-# Configure CORS with your actual domains
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:5500",
@@ -37,111 +41,127 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Request and response models
+# -------------------------------------------------------------------
+# Pydantic models
+# -------------------------------------------------------------------
 class ChatRequest(BaseModel):
     message: str
-    userId: str = None
-    timestamp: str = None
+    userId: str | None = None
+    timestamp: str | None = None           # client‑supplied (optional)
 
 class ChatResponse(BaseModel):
-    message: str 
-    timestamp: str
-    status: str
+    message: str                           # chatbot’s reply
+    timestamp: datetime                    # server‑side UTC time
+    status: str                            # "success" | "error"
     success: bool = True
-    error_message: str = ""
+    error_message: str | None = None
 
-# Root endpoint
+# -------------------------------------------------------------------
+# Root + health endpoints
+# -------------------------------------------------------------------
 @app.get("/")
 async def root():
     return {
         "message": "Restaurant Chatbot API is running!",
         "version": "1.0.0",
         "endpoints": {
-            "chat": "/chat - POST - Send a message to the chatbot",
-            "health": "/health - GET - Check API health"
-        }
+            "chat": "/chat  (POST)",
+            "health": "/health  (GET)",
+        },
     }
 
 @app.head("/")
 async def head_root():
     return await root()
 
-# Health check
 @app.get("/health")
 async def health_check():
     try:
-        api_valid = gemini_client.validate_api_key() if hasattr(gemini_client, 'validate_api_key') else True
+        api_valid = (
+            gemini_client.validate_api_key()
+            if hasattr(gemini_client, "validate_api_key")
+            else True
+        )
         return {
             "status": "healthy",
             "service": "restaurant-chatbot",
             "gemini_api": "connected" if api_valid else "disconnected",
-            "timestamp": str(__import__('datetime').datetime.now())
+            "timestamp": datetime.utcnow().isoformat(),
         }
     except Exception as e:
-        logging.error(f"Health check failed: {e}")
+        logging.error("Health check failed: %s", e)
         return {
             "status": "unhealthy",
             "service": "restaurant-chatbot",
             "error": str(e),
-            "timestamp": str(__import__('datetime').datetime.now())
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
-# Chat endpoint
+# -------------------------------------------------------------------
+# /chat endpoint ‑‑ now returns a ChatResponse that matches the model
+# -------------------------------------------------------------------
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     try:
-        print(f"🔍 Received message: {request.message}")
-        
-        # Use the new method with mock responses
-        response = await gemini_client.generate_response_with_fallback(request.message)
-        
-        print(f"🔍 Generated response: {response[:100]}...")
-        
-        return {
-            "response": response,
-            "success": True,
-            "error_message": ""
-        }
-    except Exception as e:
-        print(f"❌ Chat endpoint error: {e}")
-        return {
-            "response": "Service temporarily unavailable. Please try again.",
-            "success": False,
-            "error_message": str(e)
-        }
+        logging.info("🔍 Received: %s", request.message)
 
-# Test question endpoint
+        reply_text: str = await gemini_client.generate_response_with_fallback(
+            request.message
+        )
+
+        logging.info("🔍 Reply (truncated): %s", reply_text[:100])
+
+        return ChatResponse(
+            message=reply_text,
+            timestamp=datetime.utcnow(),
+            status="success",
+            success=True,
+        )
+
+    except Exception as e:
+        logging.exception("❌ Chat endpoint error")
+        return ChatResponse(
+            message="Service temporarily unavailable. Please try again.",
+            timestamp=datetime.utcnow(),
+            status="error",
+            success=False,
+            error_message=str(e),
+        )
+
+# -------------------------------------------------------------------
+# /test-questions helper (unchanged except for logging tweak)
+# -------------------------------------------------------------------
 @app.post("/test-questions")
 async def test_questions():
-    test_questions = [
+    questions = [
         "What are your opening hours?",
         "What are your signature dishes?",
         "Where is your restaurant located?",
         "How can I make a reservation?",
         "Do you have vegetarian options?",
-        "How can I contact the restaurant?"
+        "How can I contact the restaurant?",
     ]
 
     results = []
-    for question in test_questions:
+    for q in questions:
         try:
-            response = await chatbot(question)
-            results.append({
-                "question": question,
-                "response": response[:100] + "..." if len(response) > 100 else response,
-                "success": True
-            })
+            r = await chatbot(q)
+            results.append(
+                {
+                    "question": q,
+                    "response": r if len(r) < 100 else r[:100] + "...",
+                    "success": True,
+                }
+            )
         except Exception as e:
-            results.append({
-                "question": question,
-                "response": "",
-                "success": False,
-                "error": str(e)
-            })
+            results.append({"question": q, "response": "", "success": False, "error": str(e)})
 
     return {"test_results": results}
 
+# -------------------------------------------------------------------
 # Uvicorn entry point
+# -------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
