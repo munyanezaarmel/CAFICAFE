@@ -43,6 +43,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # -------------------------------------------------------------------
@@ -109,6 +110,11 @@ async def health_check():
 # -------------------------------------------------------------------
 # /chat endpoint - Fixed error handling and response format
 # -------------------------------------------------------------------
+@app.options("/chat")
+async def chat_options():
+    """Handle CORS preflight requests for /chat endpoint"""
+    return {"message": "OK"}
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     try:
