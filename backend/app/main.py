@@ -1,11 +1,13 @@
 from dotenv import load_dotenv
 load_dotenv()
+
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import logging
 import os
+
 # Import your modules
 from app.chat import chatbot, gemini_client
 
@@ -25,23 +27,23 @@ app = FastAPI(
 )
 
 # -------------------------------------------------------------------
-# CORS Configuration - CRITICAL FIX
+# CORS Configuration (NO custom middleware)
 # -------------------------------------------------------------------
-# origins = [
-#     "https://munyanezaarmel.github.io",
-#     "http://localhost:3000",
-#     "http://127.0.0.1:5500",
-#     "http://localhost:5500",
-# ]
+origins = [
+    "https://munyanezaarmel.github.io",  # ✅ GitHub Pages domain
+    "http://localhost:3000",
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+]
 
-# CRITICAL: Add CORS middleware BEFORE any routes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://munyanezaarmel.github.io"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 # -------------------------------------------------------------------
 # Pydantic models
 # -------------------------------------------------------------------
@@ -65,16 +67,6 @@ class HealthResponse(BaseModel):
     error: str = None
 
 # -------------------------------------------------------------------
-# MANUAL CORS HEADERS FUNCTION (backup solution)
-# -------------------------------------------------------------------
-def add_cors_headers(response):
-    """Add CORS headers manually as backup"""
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Accept, Content-Type, Authorization"
-    return response
-
-# -------------------------------------------------------------------
 # Root endpoint
 # -------------------------------------------------------------------
 @app.get("/")
@@ -84,7 +76,7 @@ async def root():
         "message": "Restaurant Chatbot API is running!",
         "version": "1.0.0",
         "status": "healthy",
-        "cors_origins": "https://munyanezaarmel.github.io",
+        "cors_origins": origins,
         "endpoints": {
             "chat": "/chat (POST)",
             "health": "/health (GET)",
@@ -98,8 +90,6 @@ async def root():
 async def health_check():
     try:
         logger.info("Health check requested")
-        
-        # API validation check
         api_valid = True
         try:
             if hasattr(gemini_client, "validate_api_key"):
@@ -116,7 +106,7 @@ async def health_check():
             gemini_api="connected" if api_valid else "disconnected",
             timestamp=datetime.utcnow().isoformat(),
         )
-        
+
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return HealthResponse(
@@ -127,22 +117,13 @@ async def health_check():
         )
 
 # -------------------------------------------------------------------
-# EXPLICIT OPTIONS handlers for ALL endpoints
+# OPTIONS preflight catch-all
 # -------------------------------------------------------------------
-@app.options("/")
-async def options_root():
-    """Handle preflight for root"""
-    return {"message": "OK"}
+from fastapi.responses import Response
 
-@app.options("/health")
-async def options_health():
-    """Handle preflight for health"""
-    return {"message": "OK"}
-
-@app.options("/chat")
-async def options_chat():
-    """Handle preflight for chat"""
-    return {"message": "OK"}
+@app.options("/{path:path}")
+async def preflight_handler(path: str):
+    return Response(status_code=204)
 
 # -------------------------------------------------------------------
 # Chat endpoint
@@ -150,32 +131,30 @@ async def options_chat():
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     try:
-        logger.info(f"Chat request received from origin")
-        
-        # Validate input
+        logger.info("Chat request received")
+
         if not request.message or not request.message.strip():
             raise HTTPException(status_code=400, detail="Message cannot be empty")
-        
-        # Process chat request
+
         try:
             if hasattr(gemini_client, 'generate_response_with_fallback'):
                 reply_text = await gemini_client.generate_response_with_fallback(request.message)
             else:
                 reply_text = await chatbot(request.message, gemini_client)
-                
+
         except Exception as chat_error:
             logger.error(f"Chat generation error: {chat_error}")
             reply_text = "I'm sorry, I'm having trouble processing your request right now. Please try again later."
 
         logger.info(f"Chat response generated: {len(reply_text)} characters")
-        
+
         return ChatResponse(
             message=reply_text,
             timestamp=datetime.utcnow().isoformat(),
             status="success",
             success=True,
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -189,42 +168,25 @@ async def chat_endpoint(request: ChatRequest):
         )
 
 # -------------------------------------------------------------------
-# Test endpoint for debugging CORS
-# -------------------------------------------------------------------
-@app.get("/test-cors")
-async def test_cors():
-    """Simple endpoint to test CORS configuration"""
-    return {
-        "message": "CORS test successful",
-        "timestamp": datetime.utcnow().isoformat(),
-        "allowed_origins": "https://munyanezaarmel.github.io"
-    }
-
-@app.options("/test-cors")
-async def options_test_cors():
-    """Handle preflight for CORS test"""
-    return {"message": "OK"}
-
-# -------------------------------------------------------------------
 # Startup event
 # -------------------------------------------------------------------
 @app.on_event("startup")
 async def startup_event():
     logger.info("🚀 Restaurant Chatbot API starting up...")
-    logger.info(f"Allowed CORS origins: {"https://munyanezaarmel.github.io"}")
+    logger.info(f"Allowed CORS origins: {origins}")
     logger.info("✅ API is ready to receive requests")
 
 # -------------------------------------------------------------------
-# Main entry point
+# Main entry point (if local run)
 # -------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8001))
     logger.info(f"Starting server on port {port}")
     uvicorn.run(
-        "app.main:app",  # ✅ Correct for app/main.py inside backend/
-        host="0.0.0.0", 
-        port=port, 
+        "app.main:app",
+        host="0.0.0.0",
+        port=port,
         reload=False,
         log_level="info"
     )
