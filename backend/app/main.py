@@ -76,7 +76,7 @@ async def root():
         "message": "Restaurant Chatbot API is running!",
         "version": "1.0.0",
         "status": "healthy",
-        "cors_origins": origins,
+        "cors_origins": ["*"],
         "endpoints": {
             "chat": "/chat (POST)",
             "health": "/health (GET)",
@@ -173,7 +173,7 @@ async def chat_endpoint(request: ChatRequest):
 @app.on_event("startup")
 async def startup_event():
     logger.info("🚀 Restaurant Chatbot API starting up...")
-    logger.info(f"Allowed CORS origins: {origins}")
+    logger.info(f"Allowed CORS origins: ["*"]")
     logger.info("✅ API is ready to receive requests")
 
 # -------------------------------------------------------------------
